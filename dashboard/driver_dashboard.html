@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoSort Driver Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<style>
+:root{
+  --bg:#0b1110; --panel:#121a18; --panel2:#18231f; --panel3:#1f2c27;
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+  --text:#eef6f1; --muted:#9aaba4; --muted2:#6f8179;
+  --green:#49cf86; --yellow:#f6bd45; --red:#ef5b55; --dry:#53a9ee; --organic:#49cf86; --ewaste:#ad84f2;
+  --cyan:#54c6db; --shadow:0 18px 50px rgba(0,0,0,.28);
+  --radius:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(1000px 400px at 20% -10%,rgba(73,207,134,.09),transparent 62%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;min-height:100vh}
+button,input,select{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.app{max-width:1400px;margin:auto;padding:16px 22px 48px}
+.topbar{position:sticky;top:0;z-index:30;margin:0 -22px;padding:14px 22px;background:rgba(11,17,16,.93);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}.brandMark{width:40px;height:40px;border-radius:12px;background:linear-gradient(150deg,#4bd18a,#2b8b5b);display:grid;place-items:center;font-size:20px;box-shadow:0 8px 24px rgba(73,207,134,.18)}
+.brandName{font-family:'Space Grotesk';font-weight:700;font-size:18px}.brandSub{font-size:11px;color:var(--muted);margin-top:2px}
+.topControls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.pill,.btn,.input,.select{border:1px solid var(--line2);background:var(--panel2);color:var(--text);border-radius:11px}.pill{padding:9px 12px;font-size:12px}.truckWrap{position:relative}.pillBtn{border:0;background:transparent;color:var(--text);padding:0;display:flex;align-items:center;gap:8px}.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 6px rgba(73,207,134,.08)}.dropdown{display:none;position:absolute;right:0;top:calc(100% + 8px);background:var(--panel3);border:1px solid var(--line2);border-radius:12px;padding:6px;min-width:220px;box-shadow:var(--shadow)}.truckWrap.open .dropdown{display:grid}.dropdown button{border:0;background:transparent;color:var(--text);text-align:left;padding:10px 11px;border-radius:9px}.dropdown button:hover,.dropdown button.active{background:rgba(73,207,134,.1);color:var(--green)}
+.btn{padding:10px 13px;font-size:12px;font-weight:600}.btn:hover{border-color:var(--green)}.btn.primary{background:var(--green);color:#082016;border-color:transparent}.btn.warn{background:rgba(246,189,69,.1);color:var(--yellow)}.btn.danger{background:rgba(239,91,85,.1);color:#ffaaa6}.btn.small{padding:8px 10px;font-size:11px}
+.hero{display:grid;grid-template-columns:1.45fr 1fr;gap:16px;margin-top:18px}.heroCard,.statCard,.panel{background:linear-gradient(155deg,var(--panel),#101715);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.heroCard{padding:22px;display:grid;grid-template-columns:180px 1fr;gap:20px;align-items:center}.ring{width:176px;height:176px;position:relative}.ring svg{width:100%;height:100%;transform:rotate(-90deg)}.ring text{font-family:'Space Grotesk'}.ringCenter{position:absolute;inset:0;display:grid;place-items:center;text-align:center}.ringPct{font-family:'Space Grotesk';font-size:36px;font-weight:700}.ringLbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}.heroTitle{font-family:'Space Grotesk';font-size:23px;margin:0 0 6px}.heroCopy{font-size:13px;line-height:1.6;color:var(--muted);max-width:650px}.metricRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:18px}.metric{padding:12px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.02)}.metricVal{font-family:'Space Grotesk';font-size:21px;font-weight:700}.metricLbl{font-size:10px;color:var(--muted2);margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
+.sideStats{display:grid;gap:16px}.statCard{padding:20px;display:flex;align-items:center;gap:14px}.statIcon{width:45px;height:45px;border-radius:12px;display:grid;place-items:center;font-size:19px;flex:none}.statVal{font-family:'Space Grotesk';font-size:24px;font-weight:700}.statLbl{font-size:11px;color:var(--muted);margin-top:3px}.statHelp{font-size:10px;color:var(--muted2);margin-top:4px}
+.notice{margin-top:16px;border-radius:14px;padding:12px 14px;font-size:12px;line-height:1.55;border:1px solid rgba(246,189,69,.28);background:rgba(246,189,69,.06);color:#dfc37f}.notice strong{color:#f5d68f}
+.tabs{position:sticky;top:76px;z-index:20;margin-top:18px;padding:6px;border:1px solid var(--line);border-radius:14px;background:rgba(18,26,24,.95);backdrop-filter:blur(10px);display:flex;gap:6px;flex-wrap:wrap}.tab{flex:1;min-width:120px;border:0;background:transparent;color:var(--muted);padding:11px 12px;border-radius:10px;font-size:12px;font-weight:700}.tab:hover{color:var(--text)}.tab.active{background:var(--green);color:#07180f}
+.section{margin-top:18px}.grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.panel{padding:20px}.panelTitle{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:14px}.panelTitle h2{font-family:'Space Grotesk';font-size:16px;margin:0}.panelTitle p{font-size:11px;color:var(--muted2);margin:4px 0 0;line-height:1.5}
+.categoryList{display:grid;gap:14px}.catRow{display:grid;grid-template-columns:34px 1fr auto;gap:11px;align-items:center}.catIcon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}.catMain{min-width:0}.catTop{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}.catTop span:last-child{color:var(--muted)}.track{height:9px;background:var(--panel2);border-radius:99px;overflow:hidden;border:1px solid var(--line)}.fill{height:100%;border-radius:99px;transition:width .45s ease}.badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.badge{font-size:10px;padding:4px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--muted)}
+.compartmentGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.comp{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:13px}.compTop{display:flex;justify-content:space-between;font-size:11px}.compPct{font-family:'Space Grotesk';font-size:19px;margin-top:7px}.compNote{font-size:10px;color:var(--muted2);margin-top:4px}
+.log{display:grid;gap:0}.logRow{display:grid;grid-template-columns:35px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.logRow:last-child{border-bottom:0}.logIcon{width:32px;height:32px;border-radius:9px;display:grid;place-items:center}.logName{font-size:12px;font-weight:600}.logMeta{font-size:10px;color:var(--muted2);margin-top:2px}.flag{font-size:9px;font-weight:700;color:var(--red);margin-left:6px}.empty{font-size:12px;color:var(--muted2);padding:12px 0}
+.binToolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.binGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.binCard{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:15px}.binCard.yellow{border-color:rgba(246,189,69,.35)}.binCard.red{border-color:rgba(239,91,85,.4);box-shadow:0 0 0 1px rgba(239,91,85,.05) inset}.binName{font-size:12px;font-weight:700}.binSub{font-size:10px;color:var(--muted);margin-top:2px}.binGauge{height:90px;width:26px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:99px;overflow:hidden;position:relative;margin:12px auto}.binGaugeFill{position:absolute;bottom:0;left:0;width:100%;transition:height .4s ease}.binPct{font-family:'Space Grotesk';font-size:18px;text-align:center}.binStatus{text-align:center;margin-top:5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}.binActions{display:flex;gap:6px;justify-content:center;margin-top:10px}.binActions .btn{flex:1}.binMix{font-size:9px;color:var(--muted2);margin-top:8px;line-height:1.5}
+.mapPanel{padding-bottom:14px}#map{width:100%;height:100%}.mapWrap{height:520px;border-radius:15px;overflow:hidden;border:1px solid var(--line);position:relative;background:#0d1412}.leaflet-container{background:#152019}.mapInfo{position:absolute;left:12px;bottom:12px;z-index:500;background:rgba(10,16,14,.9);border:1px solid var(--line2);border-radius:10px;padding:9px 11px;font-size:10px;color:var(--muted)}.legend{display:flex;gap:10px;flex-wrap:wrap}.legend span{display:flex;align-items:center;gap:5px}.legend i{width:8px;height:8px;border-radius:50%;display:inline-block}.mapUnavailable{position:absolute;inset:0;display:none;place-items:center;text-align:center;color:var(--muted);padding:25px;background:linear-gradient(180deg,#111a17,#0d1412);z-index:550}.mapUnavailable.show{display:grid}
+.scanLayout{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}.sourceBar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}.sourceBtn{border:1px solid var(--line2);background:var(--panel2);color:var(--muted);padding:9px 11px;border-radius:10px;font-size:11px;font-weight:700}.sourceBtn.active{border-color:var(--green);color:var(--green);background:rgba(73,207,134,.08)}.sourcePane{display:none}.sourcePane.active{display:block}.sampleGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.sample{padding:10px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);color:var(--text);text-align:left;font-size:11px}.sample:hover{border-color:var(--green)}.sample strong{display:block;font-size:16px;margin-bottom:4px}.upload{border:1.5px dashed var(--line2);border-radius:14px;padding:30px;text-align:center;background:rgba(255,255,255,.01)}.upload p{font-size:12px;color:var(--muted);margin:6px 0 14px}.cameraStage{display:grid;gap:10px}.videoWrap{height:330px;background:#0b100f;border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative;display:grid;place-items:center}.videoWrap video,.videoWrap img{width:100%;height:100%;object-fit:cover;display:none}.videoWrap video.on,.videoWrap img.on{display:block}.crosshair{position:absolute;inset:18%;border:1px solid rgba(73,207,134,.55);border-radius:18px;pointer-events:none}.manualGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field label{display:block;font-size:10px;color:var(--muted);margin-bottom:6px}.input,.select{width:100%;padding:10px 11px;font-size:12px}.resultBox{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);padding:15px}.resultHead{display:flex;gap:11px;align-items:center}.resultIcon{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;font-size:19px}.resultTitle{font-family:'Space Grotesk';font-size:17px}.resultSub{font-size:10px;color:var(--muted);margin-top:3px}.confGrid{display:grid;gap:7px;margin-top:14px}.confRow{display:grid;grid-template-columns:100px 1fr 42px;gap:8px;align-items:center;font-size:10px;color:var(--muted)}.confVal{text-align:right;font-variant-numeric:tabular-nums}.medicalBox{margin-top:12px;padding:11px 12px;border-radius:11px;border:1px solid rgba(239,91,85,.35);background:rgba(239,91,85,.08);color:#ffb0ac;font-size:11px;line-height:1.5}.reviewBox{margin-top:12px;padding:11px 12px;border-radius:11px;border:1px solid rgba(246,189,69,.35);background:rgba(246,189,69,.08);color:#f2d28e;font-size:11px;line-height:1.5}.modelStatus{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:12px}.statusTag{font-size:10px;padding:5px 8px;border-radius:999px;border:1px solid var(--line2);color:var(--muted)}.statusTag.connected{color:var(--green);border-color:rgba(73,207,134,.35);background:rgba(73,207,134,.06)}.statusTag.demo{color:var(--yellow);border-color:rgba(246,189,69,.35);background:rgba(246,189,69,.06)}.statusTag.error{color:var(--red);border-color:rgba(239,91,85,.35);background:rgba(239,91,85,.06)}
+.modal{display:none;position:fixed;inset:0;background:rgba(2,7,5,.78);z-index:1000;align-items:center;justify-content:center;padding:18px}.modal.show{display:flex}.modalCard{width:min(560px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:20px;box-shadow:var(--shadow)}.modalHead{display:flex;justify-content:space-between;align-items:center}.modalHead h3{font-family:'Space Grotesk';margin:0;font-size:18px}.formGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}.full{grid-column:1/-1}.modalFoot{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}.codeBox{background:#0a100e;border:1px solid var(--line);padding:12px;border-radius:11px;color:#bfead2;font-family:ui-monospace,monospace;font-size:10px;line-height:1.55;overflow:auto}
+.footer{text-align:center;color:var(--muted2);font-size:10.5px;line-height:1.7;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+@media(max-width:1050px){.hero{grid-template-columns:1fr}.grid2,.scanLayout{grid-template-columns:1fr}.binGrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.app{padding-left:12px;padding-right:12px}.topbar{margin:0 -12px;padding-left:12px;padding-right:12px}.tabs{top:70px}.heroCard{grid-template-columns:1fr;text-align:center}.metricRow,.grid3,.compartmentGrid,.manualGrid{grid-template-columns:1fr 1fr}.ring{margin:auto}.sampleGrid{grid-template-columns:1fr 1fr}.binGrid{grid-template-columns:1fr}.mapWrap{height:420px}.topControls{width:100%}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="brandMark">🚛</div><div><div class="brandName">EcoSort Driver Dashboard</div><div class="brandSub">AI waste segregation & route console</div></div></div>
+    <div class="topControls">
+      <div class="pill truckWrap" id="truckWrap">
+        <button class="pillBtn" id="truckBtn"><span class="dot"></span><span id="truckLabel">Truck #07 · Ward 4</span><span>⌄</span></button>
+        <div class="dropdown" id="truckDropdown"></div>
+      </div>
+      <div class="pill" id="clock">--:--:--</div>
+      <button class="btn small" id="modelBtn">Model</button>
+      <button class="btn small" id="resetBtn">Reset demo</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="heroCard">
+      <div class="ring">
+        <svg viewBox="0 0 176 176">
+          <circle cx="88" cy="88" r="72" fill="none" stroke="#22302a" stroke-width="14"/>
+          <circle id="ringDry" cx="88" cy="88" r="72" fill="none" stroke="var(--dry)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 452"/>
+          <circle id="ringOrganic" cx="88" cy="88" r="72" fill="none" stroke="var(--organic)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 452"/>
+          <circle id="ringEwaste" cx="88" cy="88" r="72" fill="none" stroke="var(--ewaste)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 452"/>
+        </svg>
+        <div class="ringCenter"><div><div class="ringPct" id="sortedPct">0%</div><div class="ringLbl">sorted</div></div></div>
+      </div>
+      <div>
+        <h1 class="heroTitle">Today's collection run</h1>
+        <div class="heroCopy">Everything the driver needs is on one screen: collected weight, sorted compartments, medical waste that must remain contained, and the fill state of assigned community bins. The dashboard is designed to separate <strong>real model data</strong> from <strong>demo/sensor data</strong> so the judges can see exactly what is connected.</div>
+        <div class="metricRow">
+          <div class="metric"><div class="metricVal" id="collectedKg">0.0 kg</div><div class="metricLbl">Waste collected</div></div>
+          <div class="metric"><div class="metricVal" id="sortedKg">0.0 kg</div><div class="metricLbl">Waste sorted</div></div>
+          <div class="metric"><div class="metricVal" id="alertBins">0/0</div><div class="metricLbl">Bins at alert</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="sideStats">
+      <div class="statCard"><div class="statIcon" style="background:rgba(73,207,134,.12);color:var(--green)">✅</div><div><div class="statVal" id="sortedCompartments">0.0 kg</div><div class="statLbl">Into sorting compartments</div><div class="statHelp">Dry + organic + e-waste</div></div></div>
+      <div class="statCard"><div class="statIcon" style="background:rgba(239,91,85,.12);color:var(--red)">⚠</div><div><div class="statVal" id="medicalKg">0.0 kg</div><div class="statLbl">Medical waste flagged</div><div class="statHelp">Contained only · never auto-sorted</div></div></div>
+    </div>
+  </section>
+
+  <div class="notice"><strong>Important demo note:</strong> the supplied prototype did not contain a YOLO model runtime. This dashboard never pretends a colour heuristic is the trained model. Photo/camera classification uses the configured local API when connected. Without the model server, the interface stays in clearly labelled Demo Mode.</div>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="bins">Area bins</button>
+    <button class="tab" data-tab="map">Live map</button>
+    <button class="tab" data-tab="scan">Scan / classify</button>
+  </nav>
+
+  <main>
+    <section class="section tabPanel" id="panel-overview">
+      <div class="grid2">
+        <section class="panel">
+          <div class="panelTitle"><div><h2>Sorted waste breakdown</h2><p>Only material actually routed into sorting compartments counts here.</p></div><div class="badge" id="scanCountBadge">0 items</div></div>
+          <div class="categoryList" id="categoryList"></div>
+          <div class="badges"><span class="badge">Dry ♻️</span><span class="badge">Organic 🍃</span><span class="badge">E-waste 🖥️</span><span class="badge" style="color:var(--red)">Medical ⚠ contained only</span></div>
+        </section>
+        <section class="panel">
+          <div class="panelTitle"><div><h2>Truck compartments</h2><p>Fill is calculated from entered/returned weights, not random values.</p></div></div>
+          <div class="compartmentGrid" id="compartments"></div>
+        </section>
+      </div>
+      <div class="grid2 section">
+        <section class="panel">
+          <div class="panelTitle"><div><h2>Recent processing log</h2><p>Every scan or manual entry on this truck.</p></div></div>
+          <div class="log" id="recentLog"></div>
+        </section>
+        <section class="panel">
+          <div class="panelTitle"><div><h2>Medical handling</h2><p>Special workflow for drugs, syringes, biohazards and organs.</p></div></div>
+          <div class="medicalBox">⚠ <strong>Medical waste is flagged and contained, not sorted.</strong><br>It stays in the sealed medical compartment and is dropped at the designated special-handling facility. This rule is reflected in the sorted total and the dashboard visuals.</div>
+          <div style="margin-top:14px;font-size:11px;color:var(--muted);line-height:1.6">Current rule: <strong style="color:var(--text)">Dry + Organic + E-waste = sorted</strong>. Medical remains outside that total.</div>
+        </section>
+      </div>
+    </section>
+
+    <section class="section tabPanel" id="panel-bins" hidden>
+      <section class="panel">
+        <div class="panelTitle">
+          <div><h2>Assigned area bins</h2><p>Green below 50% · Yellow 50–79% · Red 80%+. 75% is treated as the high-warning point.</p></div>
+          <div class="binToolbar"><button class="btn small" id="syncBinsBtn">↻ Sync sensors</button><button class="btn small" id="addBinBtn">+ Add bin</button></div>
+        </div>
+        <div class="binGrid" id="binGrid"></div>
+      </section>
+    </section>
+
+    <section class="section tabPanel" id="panel-map" hidden>
+      <section class="panel mapPanel">
+        <div class="panelTitle"><div><h2>Live bin map · current truck route</h2><p>Tap a marker for location, fill level and detected waste mix. Demo coordinates can be replaced with GPS sensor coordinates.</p></div><div class="badge" id="mapSource">Demo coordinates</div></div>
+        <div class="mapWrap"><div id="map"></div><div class="mapUnavailable" id="mapUnavailable"><div><strong>Map tiles could not be loaded.</strong><br><span style="font-size:11px">The bin data is still available in the Area bins tab. Open the dashboard with internet access for the geographic base map.</span></div></div><div class="mapInfo"><div class="legend"><span><i style="background:var(--green)"></i>&lt;50%</span><span><i style="background:var(--yellow)"></i>50–79%</span><span><i style="background:var(--red)"></i>80%+</span></div></div></div>
+      </section>
+    </section>
+
+    <section class="section tabPanel" id="panel-scan" hidden>
+      <div class="scanLayout">
+        <section class="panel">
+          <div class="panelTitle"><div><h2>Scan an item</h2><p>Use the actual local model when connected. Sample buttons are labelled demo inputs, not fake model confidence.</p></div></div>
+          <div class="sourceBar">
+            <button class="sourceBtn active" data-source="sample">🧪 Demo sample</button>
+            <button class="sourceBtn" data-source="upload">🖼 Upload photo</button>
+            <button class="sourceBtn" data-source="camera">📷 Camera</button>
+            <button class="sourceBtn" data-source="manual">✍ Manual</button>
+          </div>
+          <div class="sourcePane active" id="source-sample"><div class="sampleGrid" id="sampleGrid"></div></div>
+          <div class="sourcePane" id="source-upload"><div class="upload" id="uploadZone"><div style="font-size:30px">🖼️</div><p>Choose an image. The dashboard sends it to your configured local model endpoint.</p><button class="btn primary" type="button" id="choosePhotoBtn">Choose photo</button><input type="file" id="fileInput" accept="image/*" hidden></div></div>
+          <div class="sourcePane" id="source-camera"><div class="cameraStage"><div class="videoWrap"><video id="cameraVideo" autoplay playsinline muted></video><img id="capturedImage" alt="Captured frame"><div class="crosshair"></div><div id="cameraPlaceholder" style="font-size:12px;color:var(--muted2)">Camera is off</div></div><div style="display:flex;gap:8px;justify-content:center"><button class="btn primary" id="startCameraBtn">Start camera</button><button class="btn" id="captureBtn" disabled>Capture & classify</button><button class="btn" id="stopCameraBtn" disabled>Stop</button></div><div id="cameraStatus" style="font-size:10px;color:var(--muted);text-align:center">Camera access needs browser permission and usually HTTPS/localhost.</div></div></div>
+          <div class="sourcePane" id="source-manual"><form class="manualGrid" id="manualForm"><div class="field"><label>Category</label><select class="select" id="manualCat"><option value="dry">Dry waste</option><option value="organic">Organic waste</option><option value="ewaste">E-waste</option><option value="medical">Medical waste</option></select></div><div class="field"><label>Weight (kg)</label><input class="input" id="manualWeight" type="number" min="0.1" step="0.1" value="1.0"></div><div class="field full"><label>Item name / note</label><input class="input" id="manualName" placeholder="e.g. plastic bottle handed over by resident"></div><div class="full" style="display:flex;justify-content:flex-end"><button class="btn primary" type="submit">Log manual item</button></div></form></div>
+
+          <div class="resultBox" id="resultBox"><div class="empty">No item processed yet.</div></div>
+          <div class="modelStatus"><span id="modelStatusText" class="statusTag demo">Demo mode · local model not connected</span><button class="btn small" id="configureModelBtn">Configure local model</button></div>
+        </section>
+        <section class="panel">
+          <div class="panelTitle"><div><h2>Model connection</h2><p>Endpoint is intentionally configurable because the provided HTML files had no actual local-model runtime.</p></div></div>
+          <div class="field"><label>Local prediction endpoint</label><input class="input" id="modelEndpoint" placeholder="http://127.0.0.1:8000/predict"></div>
+          <div style="display:flex;gap:8px;margin-top:10px"><button class="btn primary" id="saveModelBtn">Save endpoint</button><button class="btn" id="testModelBtn">Test connection</button></div>
+          <div id="modelTestMsg" style="margin-top:10px;font-size:10px;color:var(--muted)">Expected response: { class, confidence } or { predictions: [...] }.</div>
+          <div class="reviewBox" style="margin-top:16px"><strong>What the dashboard does now:</strong><br>1. Upload/camera → POST image to your local API.<br>2. API returns class + real model confidence.<br>3. Medical is flagged and excluded from sorted total.<br>4. Weight comes from manual input until a real weighing sensor is connected.</div>
+          <div style="margin-top:16px"><div style="font-size:10px;color:var(--muted);margin-bottom:8px">Model API example</div><div class="codeBox">POST /predict<br>Content-Type: multipart/form-data<br><br>file=&lt;image&gt;<br><br>→ {"class":"e-waste","confidence":0.93}</div></div>
+          <div class="modelStatus"><span class="statusTag" id="sensorStatus">Sensor feed · demo values</span><button class="btn small" id="configureSensorBtn">Sensor endpoint</button></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer">EcoSort Driver Dashboard · fixed from the supplied prototype + Claude dashboard. The UI distinguishes real local-model predictions from demo/manual data. No confidence is fabricated for sample items.</div>
+</div>
+
+<div class="modal" id="binModal"><div class="modalCard"><div class="modalHead"><h3 id="binModalTitle">Add area bin</h3><button class="btn small" id="closeBinModal">✕</button></div><form class="formGrid" id="binForm"><input type="hidden" id="editBinId"><div class="field"><label>Bin name</label><input class="input" id="binName" required placeholder="Sector 62 Gate"></div><div class="field"><label>Fill level (%)</label><input class="input" id="binFill" required type="number" min="0" max="100" value="20"></div><div class="field"><label>Latitude</label><input class="input" id="binLat" required type="number" step="0.000001" value="28.628"></div><div class="field"><label>Longitude</label><input class="input" id="binLng" required type="number" step="0.000001" value="77.370"></div><div class="field"><label>Dry mix (%)</label><input class="input" id="mixDry" type="number" min="0" max="100" value="50"></div><div class="field"><label>Organic mix (%)</label><input class="input" id="mixOrganic" type="number" min="0" max="100" value="40"></div><div class="field"><label>E-waste mix (%)</label><input class="input" id="mixEwaste" type="number" min="0" max="100" value="7"></div><div class="field"><label>Medical mix (%)</label><input class="input" id="mixMedical" type="number" min="0" max="100" value="3"></div><div class="full" style="font-size:10px;color:var(--muted2)">Coordinates are editable so your team can replace demo points with the actual GPS positions sent by the bins.</div><div class="full modalFoot"><button type="button" class="btn" id="cancelBin">Cancel</button><button type="submit" class="btn primary">Save bin</button></div></form></div></div>
+
+<div class="modal" id="modelModal"><div class="modalCard"><div class="modalHead"><h3>Local model setup</h3><button class="btn small" id="closeModelModal">✕</button></div><p style="font-size:12px;color:var(--muted);line-height:1.6">Set the local prediction endpoint. When you run the bundled server, the default /predict endpoint is on the same local server as this dashboard, so browser security rules do not block the request.</p><div class="field"><label>Prediction endpoint</label><input class="input" id="modelEndpointModal" placeholder="http://127.0.0.1:8000/predict"></div><div class="modalFoot"><button class="btn" id="cancelModel">Cancel</button><button class="btn primary" id="saveModelModal">Save</button></div></div></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(() => {
+  const KEY = 'ecosort-fixed-dashboard-v1';
+  const MODEL_KEY = 'ecosort-model-endpoint';
+  const SENSOR_KEY = 'ecosort-sensor-endpoint';
+  const CATS = {
+    dry:{label:'Dry waste',icon:'♻️',color:'#53a9ee'},
+    organic:{label:'Organic waste',icon:'🍃',color:'#49cf86'},
+    ewaste:{label:'E-waste',icon:'🖥️',color:'#ad84f2'},
+    medical:{label:'Medical waste',icon:'☣️',color:'#ef5b55'}
+  };
+  const CAT_ORDER = ['dry','organic','ewaste','medical'];
+  const COMP_CAP = {dry:100, organic:80, ewaste:40, medical:20};
+  const TRUCKS = {
+    '07':{label:'Truck #07 · Ward 4', bins:[
+      {id:'B1',name:'Route Bin 01',lat:28.6311,lng:77.3646,fill:42,mix:{dry:60,organic:30,ewaste:5,medical:5}},
+      {id:'B2',name:'Route Bin 02',lat:28.6347,lng:77.3691,fill:78,mix:{dry:35,organic:50,ewaste:5,medical:10}},
+      {id:'B3',name:'Route Bin 03',lat:28.6286,lng:77.3781,fill:88,mix:{dry:15,organic:15,ewaste:5,medical:65}},
+      {id:'B4',name:'Route Bin 04',lat:28.6226,lng:77.3815,fill:55,mix:{dry:45,organic:45,ewaste:5,medical:5}},
+      {id:'B5',name:'Route Bin 05',lat:28.6248,lng:77.3657,fill:31,mix:{dry:50,organic:35,ewaste:10,medical:5}},
+      {id:'B6',name:'Route Bin 06',lat:28.6209,lng:77.3741,fill:69,mix:{dry:40,organic:48,ewaste:6,medical:6}},
+      {id:'B7',name:'Route Bin 07',lat:28.6164,lng:77.3830,fill:82,mix:{dry:60,organic:10,ewaste:25,medical:5}},
+      {id:'B8',name:'Route Bin 08',lat:28.6159,lng:77.3920,fill:20,mix:{dry:55,organic:38,ewaste:4,medical:3}}
+    ]},
+    '12':{label:'Truck #12 · Ward 6',bins:[
+      {id:'B1',name:'Route Bin 01',lat:28.6401,lng:77.3734,fill:64,mix:{dry:55,organic:32,ewaste:8,medical:5}},
+      {id:'B2',name:'Route Bin 02',lat:28.6450,lng:77.3791,fill:28,mix:{dry:40,organic:52,ewaste:4,medical:4}},
+      {id:'B3',name:'Route Bin 03',lat:28.6380,lng:77.3870,fill:91,mix:{dry:70,organic:8,ewaste:18,medical:4}},
+      {id:'B4',name:'Route Bin 04',lat:28.6317,lng:77.3884,fill:50,mix:{dry:48,organic:40,ewaste:6,medical:6}},
+      {id:'B5',name:'Route Bin 05',lat:28.6280,lng:77.3960,fill:86,mix:{dry:10,organic:12,ewaste:4,medical:74}}
+    ]},
+    '03':{label:'Truck #03 · Ward 2',bins:[
+      {id:'B1',name:'Route Bin 01',lat:28.6119,lng:77.3559,fill:15,mix:{dry:58,organic:34,ewaste:5,medical:3}},
+      {id:'B2',name:'Route Bin 02',lat:28.6164,lng:77.3694,fill:47,mix:{dry:44,organic:44,ewaste:6,medical:6}},
+      {id:'B3',name:'Route Bin 03',lat:28.6218,lng:77.3812,fill:73,mix:{dry:38,organic:48,ewaste:6,medical:8}},
+      {id:'B4',name:'Route Bin 04',lat:28.6088,lng:77.3828,fill:60,mix:{dry:50,organic:38,ewaste:7,medical:5}}
+    ]}
+  };
+  const defaultTruckState = () => ({scans:[],weights:{dry:0,organic:0,ewaste:0,medical:0}});
+  let db = loadDb();
+  let currentTruck = db.currentTruck || '07';
+  let currentSource = 'sample';
+  let stream = null;
+  let map = null, mapLayer = null;
+  const LOCAL_BASE = location.protocol === 'file:' ? 'http://127.0.0.1:8000' : '';
+  let modelEndpoint = localStorage.getItem(MODEL_KEY) || (LOCAL_BASE + '/predict');
+  let sensorEndpoint = localStorage.getItem(SENSOR_KEY) || (LOCAL_BASE + '/bins');
+  if(location.protocol !== 'file:' && /^https?:\/\/127\.0\.0\.1:8000\/(predict|bins)$/.test(modelEndpoint)) modelEndpoint='/predict';
+  if(location.protocol !== 'file:' && /^https?:\/\/127\.0\.0\.1:8000\/bins$/.test(sensorEndpoint)) sensorEndpoint='/bins';
+  const $ = id => document.getElementById(id);
+  const truckState = () => { db.trucks ||= {}; db.trucks[currentTruck] ||= defaultTruckState(); return db.trucks[currentTruck]; };
+  function loadDb(){ try { return JSON.parse(localStorage.getItem(KEY)) || {currentTruck:'07',trucks:{}} } catch { return {currentTruck:'07',trucks:{}} } }
+  function saveDb(){ db.currentTruck=currentTruck; localStorage.setItem(KEY,JSON.stringify(db)); }
+  function cloneBins(){ return JSON.parse(JSON.stringify(TRUCKS[currentTruck].bins)); }
+  function bins(){ db.bins ||= {}; db.bins[currentTruck] ||= cloneBins(); return db.bins[currentTruck]; }
+  function saveBins(){ db.bins[currentTruck]=bins(); saveDb(); }
+  function alertLevel(v){ if(v>=80)return 'red'; if(v>=50)return 'yellow'; return 'green'; }
+  function alertText(v){ if(v>=80)return 'Collect now'; if(v>=75)return 'High warning'; if(v>=50)return 'Approaching full'; return 'OK'; }
+  function formatTime(ts){ return new Date(ts).toLocaleTimeString('en-IN',{hour12:false}); }
+  function stats(){
+    const s=truckState(); const w=s.weights; const collected=Object.values(w).reduce((a,b)=>a+b,0); const sorted=w.dry+w.organic+w.ewaste;
+    return {w,collected,sorted,medical:w.medical,items:s.scans.length,sortedPct:collected?sorted/collected*100:0};
+  }
+  function isTabActive(name){ const el=document.querySelector('.tab[data-tab="'+name+'"]'); return !!el && el.classList.contains('active'); }
+  function renderAll(){ renderHeader(); renderOverview(); renderBins(); if(isTabActive('map')) renderMap(); updateModelStatus(); }
+  function renderHeader(){ const t=TRUCKS[currentTruck]; $('truckLabel').textContent=t.label; const st=stats(); $('collectedKg').textContent=st.collected.toFixed(1)+' kg'; $('sortedKg').textContent=st.sorted.toFixed(1)+' kg'; $('sortedCompartments').textContent=st.sorted.toFixed(1)+' kg'; $('medicalKg').textContent=st.medical.toFixed(1)+' kg'; $('sortedPct').textContent=st.sortedPct.toFixed(0)+'%'; const b=bins(); const a=b.filter(x=>alertLevel(x.fill)!=='green').length; $('alertBins').textContent=a+'/'+b.length; $('scanCountBadge').textContent=st.items+' item'+(st.items===1?'':'s'); updateRing(st); }
+  function updateRing(st){ const circ=2*Math.PI*72; let off=0; [['dry','ringDry'],['organic','ringOrganic'],['ewaste','ringEwaste']].forEach(([cat,id])=>{const len=st.collected?(st.w[cat]/st.collected*circ):0; const el=$(id); el.setAttribute('stroke-dasharray',len+' '+circ); el.setAttribute('stroke-dashoffset',-off); off+=len;}); }
+  function renderOverview(){ const s=truckState(); const st=stats(); const totalSorted=st.sorted||1; $('categoryList').innerHTML=''; ['dry','organic','ewaste'].forEach(cat=>{const w=s.weights[cat]||0; const pct=(w/totalSorted*100); const m=CATS[cat]; const row=document.createElement('div'); row.className='catRow'; row.innerHTML='<div class="catIcon" style="background:'+m.color+'18;color:'+m.color+'">'+m.icon+'</div><div class="catMain"><div class="catTop"><span>'+m.label+'</span><span>'+w.toFixed(1)+' kg</span></div><div class="track"><div class="fill" style="width:'+Math.min(100,pct)+'%;background:'+m.color+'"></div></div></div><div style="font-size:10px;color:var(--muted)">'+pct.toFixed(0)+'%</div>'; $('categoryList').appendChild(row); });
+    $('recentLog').innerHTML=s.scans.length? s.scans.slice().reverse().slice(0,12).map(e=>{const m=CATS[e.cat]||CATS.dry; return '<div class="logRow"><div class="logIcon" style="background:'+m.color+'18;color:'+m.color+'">'+m.icon+'</div><div><div class="logName">'+escapeHtml(e.name||m.label)+(e.cat==='medical'?'<span class="flag">FLAGGED</span>':'')+'</div><div class="logMeta">'+(e.source||'Manual')+' · '+e.weight.toFixed(1)+' kg · '+formatTime(e.ts)+(e.conf!=null?' · '+(e.conf*100).toFixed(0)+'%':'')+'</div></div><div style="font-size:9px;color:'+m.color+'">'+m.label+'</div></div>';}).join(''):'<div class="empty">No items processed yet.</div>';
+    const caps=$('compartments'); caps.innerHTML=''; CAT_ORDER.forEach(cat=>{ const m=CATS[cat], v=s.weights[cat], cap=COMP_CAP[cat], pct=Math.min(100,v/cap*100); const div=document.createElement('div'); div.className='comp'; div.innerHTML='<div class="compTop"><span>'+m.icon+' '+m.label+'</span><span>'+v.toFixed(1)+' / '+cap+' kg</span></div><div class="compPct" style="color:'+m.color+'">'+pct.toFixed(0)+'%</div><div class="track"><div class="fill" style="width:'+pct+'%;background:'+m.color+'"></div></div><div class="compNote">'+(cat==='medical'?'Sealed · special handling':'Auto-sort compartment')+'</div>'; caps.appendChild(div); });
+  }
+  function renderBins(){ const g=$('binGrid'); const b=bins(); g.innerHTML=b.map((x,i)=>{const lvl=alertLevel(x.fill); const dom=Object.entries(x.mix).sort((a,c)=>c[1]-a[1])[0][0]; const c=CATS[dom]; return '<div class="binCard '+lvl+'"><div class="binName">'+x.id+' · '+escapeHtml(x.name)+'</div><div class="binSub">Mostly '+c.label.toLowerCase()+'</div><div class="binGauge"><div class="binGaugeFill" style="height:'+x.fill+'%;background:'+lvlColor(lvl)+'"></div></div><div class="binPct">'+x.fill+'%</div><div class="binStatus" style="color:'+lvlColor(lvl)+'">'+alertText(x.fill)+'</div><div class="binMix">Dry '+x.mix.dry+'% · Organic '+x.mix.organic+'% · E-waste '+x.mix.ewaste+'% · Medical '+x.mix.medical+'%</div><div class="binActions"><button class="btn small" data-collect-bin="'+i+'">Collect</button><button class="btn small" data-edit-bin="'+i+'">Edit</button></div></div>'; }).join(''); g.querySelectorAll('[data-collect-bin]').forEach(btn=>btn.addEventListener('click',()=>{ const i=+btn.dataset.collectBin; const b=bins()[i]; b.fill=5; saveBins(); renderAll(); })); g.querySelectorAll('[data-edit-bin]').forEach(btn=>btn.addEventListener('click',()=>openBinModal(+btn.dataset.editBin)) ); }
+  function lvlColor(l){return l==='red'?'var(--red)':l==='yellow'?'var(--yellow)':'var(--green)'}
+  function switchTruck(id){ currentTruck=id; db.trucks ||= {}; db.trucks[id] ||= defaultTruckState(); db.bins ||= {}; db.bins[id] ||= cloneBins(); saveDb(); $('truckDropdown').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.truck===id)); $('truckWrap').classList.remove('open'); renderAll(); if(isTabActive('map')) renderMap(); }
+  function escapeHtml(s){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
+
+  // tabs
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t)); document.querySelectorAll('.tabPanel').forEach(p=>p.hidden=p.id!=='panel-'+t.dataset.tab); if(t.dataset.tab==='map') setTimeout(renderMap,50); if(t.dataset.tab==='scan') window.scrollTo({top:document.querySelector('.tabs').offsetTop-12,behavior:'smooth'});}));
+  $('truckBtn').addEventListener('click',e=>{e.stopPropagation();$('truckWrap').classList.toggle('open')}); document.addEventListener('click',()=> $('truckWrap').classList.remove('open'));
+  $('truckDropdown').innerHTML=Object.entries(TRUCKS).map(([id,t])=>'<button data-truck="'+id+'">'+t.label+'</button>').join(''); $('truckDropdown').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>switchTruck(b.dataset.truck)));
+  function tick(){$('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})} tick(); setInterval(tick,1000);
+
+  // samples: exact labels, no fake confidence
+  const samples=[
+    {name:'Banana peel',icon:'🍌',cat:'organic',weight:0.3},{name:'Vegetable scraps',icon:'🥬',cat:'organic',weight:0.5},{name:'Plastic cup',icon:'🥤',cat:'dry',weight:0.1},{name:'Cardboard box',icon:'📦',cat:'dry',weight:0.7},{name:'Glass bottle',icon:'🍾',cat:'dry',weight:0.4},{name:'Tin can',icon:'🥫',cat:'dry',weight:0.2},{name:'Battery',icon:'🔋',cat:'ewaste',weight:0.2},{name:'Broken phone',icon:'📱',cat:'ewaste',weight:0.2},{name:'Old laptop',icon:'💻',cat:'ewaste',weight:1.5},{name:'Expired medicine',icon:'💊',cat:'medical',weight:0.1},{name:'Used syringe',icon:'💉',cat:'medical',weight:0.05},{name:'Biohazard swab',icon:'🩸',cat:'medical',weight:0.05}
+  ];
+  $('sampleGrid').innerHTML=samples.map((s,i)=>'<button class="sample" data-sample="'+i+'"><strong>'+s.icon+'</strong>'+s.name+'<div style="font-size:9px;color:'+CATS[s.cat].color+'">'+CATS[s.cat].label+' · demo '+s.weight+' kg</div></button>').join(''); $('sampleGrid').querySelectorAll('[data-sample]').forEach(b=>b.addEventListener('click',()=>processResult({category:samples[+b.dataset.sample].cat,confidence:null,source:'Demo sample',name:samples[+b.dataset.sample].name,weight:samples[+b.dataset.sample].weight,emoji:samples[+b.dataset.sample].icon})));
+
+  // source toggles
+  document.querySelectorAll('.sourceBtn').forEach(b=>b.addEventListener('click',()=>{currentSource=b.dataset.source;document.querySelectorAll('.sourceBtn').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.sourcePane').forEach(p=>p.classList.toggle('active',p.id==='source-'+currentSource));if(currentSource!=='camera')stopCamera();}));
+
+  // upload/camera
+  $('choosePhotoBtn').addEventListener('click',e=>{e.stopPropagation();$('fileInput').click()}); $('uploadZone').addEventListener('click',e=>{if(e.target.id!=='choosePhotoBtn')$('fileInput').click()});
+  $('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;const img=await fileToDataUrl(file); $('capturedImage').src=img; $('capturedImage').classList.add('on'); const weight=window.prompt('Demo weight for this item in kg (required until a weighing sensor is connected):','1.0'); if(weight!==null && Number(weight)>0) await classifyImageDataUrl(img,file.name,Number(weight)); e.target.value='';});
+  $('startCameraBtn').addEventListener('click',startCamera); $('stopCameraBtn').addEventListener('click',stopCamera); $('captureBtn').addEventListener('click',captureCamera);
+  async function startCamera(){try{if(!navigator.mediaDevices?.getUserMedia){$('cameraStatus').textContent='Camera API unavailable. Use Upload photo.';return} stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}); $('cameraVideo').srcObject=stream; $('cameraVideo').classList.add('on'); $('cameraPlaceholder').style.display='none'; $('captureBtn').disabled=false; $('stopCameraBtn').disabled=false; $('startCameraBtn').disabled=true; $('cameraStatus').textContent='Live camera active.'}catch(err){$('cameraStatus').textContent='Camera unavailable: '+(err.name||'permission error')+'. Use Upload photo.'}}
+  function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null} $('cameraVideo').classList.remove('on');$('captureBtn').disabled=true;$('stopCameraBtn').disabled=true;$('startCameraBtn').disabled=false;$('cameraPlaceholder').style.display='block';}
+  async function captureCamera(){if(!stream)return;const v=$('cameraVideo'),c=document.createElement('canvas');c.width=v.videoWidth||640;c.height=v.videoHeight||480;c.getContext('2d').drawImage(v,0,0,c.width,c.height);const data=c.toDataURL('image/jpeg',.9);$('capturedImage').src=data;$('capturedImage').classList.add('on');const weight=window.prompt('Demo weight for this item in kg:','1.0');if(weight!==null&&Number(weight)>0) await classifyImageDataUrl(data,'Live camera frame',Number(weight));}
+  function fileToDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
+  async function classifyImageDataUrl(dataUrl,label,weight){ showBusy(); try{ const form=new FormData(); const blob=dataURLToBlob(dataUrl); form.append('file',blob,'image.jpg'); const response=await fetch(modelEndpoint,{method:'POST',body:form}); if(!response.ok)throw new Error('HTTP '+response.status); const payload=await response.json(); const parsed=parseModelResponse(payload); if(!parsed.category)throw new Error('No recognised class in model response'); processResult({category:parsed.category,confidence:parsed.confidence,source:'Local model',name:label,weight}); setModelStatus('connected','Local model connected'); }catch(err){ setModelStatus('error','Model unavailable · use Demo samples'); $('resultBox').innerHTML='<div class="reviewBox"><strong>Local model not reached.</strong><br>'+escapeHtml(err.message||String(err))+'<br><br>Open Model setup and start your local API, or use the clearly labelled Demo sample buttons.</div>'; }}
+  function showBusy(){$('resultBox').innerHTML='<div class="empty">Sending image to local model…</div>'}
+  function dataURLToBlob(data){const [h,b]=data.split(',');const mime=h.match(/:(.*?);/)[1];const bin=atob(b);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return new Blob([arr],{type:mime})}
+  function normalizeCat(raw){let s=String(raw||'').toLowerCase().replace(/[_-]/g,'');if(/medical|biomedical|biohazard|syringe|medicine|drug|organ|bandage|hazard/.test(s))return 'medical';if(/e?waste|electronic|battery|laptop|phone|mobile|charger|pcb/.test(s))return 'ewaste';if(/organic|wet|food|banana|fruit|vegetable|compost|biodeg/.test(s))return 'organic';if(/dry|recycl|plastic|paper|cardboard|glass|metal|bottle|can/.test(s))return 'dry';return null}
+  function parseModelResponse(p){let c=p.class??p.label??p.category;let conf=p.confidence??p.score??p.probability??null;if(p.predictions?.length){const x=p.predictions[0];c=x.class??x.label??x.name;conf=x.confidence??x.score??x.probability??conf} if(p.detections?.length){const x=p.detections[0];c=x.class??x.label??x.name;conf=x.confidence??x.score??x.probability??conf} return {category:normalizeCat(c),confidence:conf==null?null:Number(conf)>1?Number(conf)/100:Number(conf)}}
+
+  // manual
+  $('manualForm').addEventListener('submit',e=>{e.preventDefault();const cat=$('manualCat').value;const weight=Math.max(.1,Number($('manualWeight').value)||1);const name=$('manualName').value.trim()||CATS[cat].label;processResult({category:cat,confidence:null,source:'Manual',name,weight});e.target.reset();$('manualWeight').value='1.0'});
+  function processResult(r){
+    if(!r || !CATS[r.category]){ $('resultBox').innerHTML='<div class="reviewBox"><strong>Could not process this item.</strong><br>Unknown category returned by the source.</div>'; return; }
+    const weight=Math.max(0.001,Number(r.weight)||0);
+    const s=truckState();
+    s.weights[r.category]=(s.weights[r.category]||0)+weight;
+    s.scans.push({ts:Date.now(),cat:r.category,weight:weight,name:r.name,source:r.source,conf:r.confidence});
+    saveDb();
+    renderAll();
+    renderResult({...r,weight});
+  }
+  function renderResult(r){const m=CATS[r.category]; let extra=''; if(r.category==='medical')extra='<div class="medicalBox">⚠ <strong>Medical waste detected.</strong> Do not auto-sort. Contain it in the sealed medical compartment and send it to the special-handling facility.</div>'; if(r.confidence==null&&r.source!=='Demo sample')extra='<div class="reviewBox">Manual/demo classification: no model confidence was fabricated.</div>'; $('resultBox').innerHTML='<div class="resultHead"><div class="resultIcon" style="background:'+m.color+'18;color:'+m.color+'">'+m.icon+'</div><div><div class="resultTitle">'+m.label+'</div><div class="resultSub">'+escapeHtml(r.name||'Item')+' · '+r.weight.toFixed(1)+' kg · '+(r.confidence!=null?(r.confidence*100).toFixed(0)+'% model confidence':r.source)+'</div></div></div>'+extra;}
+
+  // bin modal
+  const binModal=$('binModal'); $('addBinBtn').addEventListener('click',()=>openBinModal(-1)); $('closeBinModal').addEventListener('click',closeBinModal); $('cancelBin').addEventListener('click',closeBinModal); binModal.addEventListener('click',e=>{if(e.target===binModal)closeBinModal()});
+  function openBinModal(index){$('binModalTitle').textContent=index<0?'Add area bin':'Edit area bin';const x=index<0?{id:'',name:'',fill:20,lat:28.628,lng:77.370,mix:{dry:50,organic:40,ewaste:7,medical:3}}:bins()[index];$('editBinId').value=index;$('binName').value=x.name;$('binFill').value=x.fill;$('binLat').value=x.lat;$('binLng').value=x.lng;$('mixDry').value=x.mix.dry;$('mixOrganic').value=x.mix.organic;$('mixEwaste').value=x.mix.ewaste;$('mixMedical').value=x.mix.medical;binModal.classList.add('show');}
+  function closeBinModal(){binModal.classList.remove('show')}
+  $('binForm').addEventListener('submit',e=>{e.preventDefault();const i=Number($('editBinId').value);const x={id:i<0?'B'+(bins().length+1):bins()[i].id,name:$('binName').value.trim()||'Route bin',fill:Math.max(0,Math.min(100,Number($('binFill').value)||0)),lat:Number($('binLat').value),lng:Number($('binLng').value),mix:{dry:Number($('mixDry').value)||0,organic:Number($('mixOrganic').value)||0,ewaste:Number($('mixEwaste').value)||0,medical:Number($('mixMedical').value)||0}};if(i<0)bins().push(x);else bins()[i]=x;saveBins();closeBinModal();renderAll();if(isTabActive('map'))renderMap();});
+
+  // map
+  function initMap(){if(!window.L){$('mapUnavailable').classList.add('show');return false}if(!map){map=L.map('map',{zoomControl:true}).setView([28.628,77.374],14);L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 19,
+  attribution: 'Tiles © Esri'
+}).addTo(map);map.on('tileerror',()=>{$('mapUnavailable').classList.add('show')});}return true}
+  function markerColor(l){return l==='red'?'#ef5b55':l==='yellow'?'#f6bd45':'#49cf86'}
+  function renderMap(){
+    if(!initMap())return;
+    setTimeout(()=>{
+      map.invalidateSize();
+      if(mapLayer)mapLayer.clearLayers();
+      mapLayer=L.layerGroup().addTo(map);
+      const b=bins();
+      const points=b.map(x=>[x.lat,x.lng]);
+      if(points.length)map.fitBounds(points,{padding:[25,25],maxZoom:15});
+      if(points.length>1)L.polyline(points,{color:'#6e8379',weight:2,dashArray:'5 6',opacity:.75}).addTo(mapLayer);
+      b.forEach(x=>{
+        const l=alertLevel(x.fill);
+        const marker=L.circleMarker([x.lat,x.lng],{radius:9,color:'#0b1110',weight:2,fillColor:markerColor(l),fillOpacity:1});
+        marker.bindPopup('<strong>'+escapeHtml(x.id+' · '+x.name)+'</strong><br>Fill: <b>'+x.fill+'%</b> · '+alertText(x.fill)+'<br>Dry '+x.mix.dry+'% · Organic '+x.mix.organic+'%<br>E-waste '+x.mix.ewaste+'% · Medical '+x.mix.medical+'%');
+        marker.addTo(mapLayer);
+      });
+      $('mapSource').textContent='GPS fields editable · '+b.length+' bins';
+    },50);
+  }
+
+  // sensor sync
+  $('syncBinsBtn').addEventListener('click',async()=>{try{const res=await fetch(sensorEndpoint);if(!res.ok)throw new Error('HTTP '+res.status);const payload=await res.json();const arr=payload.bins||payload; if(!Array.isArray(arr))throw new Error('Expected an array of bin readings');const byId=Object.fromEntries(arr.map(x=>[String(x.id),x]));bins().forEach(x=>{const y=byId[x.id];if(y&&y.fill!=null)x.fill=Math.max(0,Math.min(100,Number(y.fill))); if(y?.lat!=null)x.lat=Number(y.lat); if(y?.lng!=null)x.lng=Number(y.lng)});saveBins();$('sensorStatus').textContent='Sensor feed · connected';$('sensorStatus').className='statusTag connected';renderAll();}catch(e){$('sensorStatus').textContent='Sensor feed · unavailable, using saved demo values';$('sensorStatus').className='statusTag error';}});
+  $('configureSensorBtn').addEventListener('click',()=>{const v=window.prompt('Sensor endpoint',sensorEndpoint);if(v){sensorEndpoint=v;localStorage.setItem(SENSOR_KEY,v);$('sensorStatus').textContent='Sensor feed · endpoint saved';$('sensorStatus').className='statusTag demo';}});
+
+  // model modal
+  $('modelBtn').addEventListener('click',()=>{$('modelEndpointModal').value=modelEndpoint;$('modelModal').classList.add('show')});$('configureModelBtn').addEventListener('click',()=>{$('modelEndpointModal').value=modelEndpoint;$('modelModal').classList.add('show')});$('closeModelModal').addEventListener('click',()=>$('modelModal').classList.remove('show'));$('cancelModel').addEventListener('click',()=>$('modelModal').classList.remove('show'));$('saveModelModal').addEventListener('click',()=>{modelEndpoint=$('modelEndpointModal').value.trim();localStorage.setItem(MODEL_KEY,modelEndpoint);$('modelModal').classList.remove('show');updateModelStatus()});
+  $('saveModelBtn').addEventListener('click',()=>{modelEndpoint=$('modelEndpoint').value.trim()||'/predict';localStorage.setItem(MODEL_KEY,modelEndpoint);updateModelStatus();$('modelTestMsg').textContent='Endpoint saved: '+modelEndpoint});$('testModelBtn').addEventListener('click',async()=>{const ep=$('modelEndpoint').value.trim()||modelEndpoint;try{const res=await fetch(ep.replace(/\/predict\/?$/,'/health'));if(!res.ok)throw new Error('HTTP '+res.status);const p=await res.json();$('modelTestMsg').textContent='Connected: '+JSON.stringify(p);setModelStatus('connected','Local model connected')}catch(e){$('modelTestMsg').textContent='Connection failed: '+e.message;setModelStatus('error','Local model unavailable')}});
+  $('modelEndpoint').value=modelEndpoint;
+  function setModelStatus(type,text){const el=$('modelStatusText'); if(!el)return; el.textContent=text; el.className='statusTag '+type}
+  async function updateModelStatus(){
+    setModelStatus('demo','Checking local model…');
+    try{
+      const healthUrl=modelEndpoint.replace(/\/predict\/?$/,'/health');
+      const res=await fetch(healthUrl,{method:'GET'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      if(data.model_loaded){ setModelStatus('connected','Local model connected'); }
+      else { setModelStatus('demo','Model server running · model file missing'); }
+    }catch(e){ setModelStatus('demo','Demo mode · local model offline'); }
+  }
+
+  // reset
+  $('resetBtn').addEventListener('click',()=>{if(!confirm('Reset this browser demo for all trucks?'))return;localStorage.removeItem(KEY);db={currentTruck:'07',trucks:{},bins:{}};currentTruck='07';renderAll();});
+  renderAll();
+})();
+</script>
+</body>
+</html>
